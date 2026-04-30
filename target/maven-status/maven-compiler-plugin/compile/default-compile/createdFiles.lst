@@ -1,0 +1,5 @@
+com\sistema\hospital\structures\Nodo.class
+com\sistema\hospital\controllers\TriageServlet.class
+com\sistema\hospital\structures\ListaTriage.class
+com\sistema\hospital\utils\ArchivoUtil.class
+com\sistema\hospital\models\Paciente.class
