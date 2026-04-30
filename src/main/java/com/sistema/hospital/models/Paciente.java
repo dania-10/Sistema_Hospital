@@ -7,16 +7,18 @@ public class Paciente implements Serializable {
     private String apellido;
     private String cedula;
     private int gravedad;
-    private String sala;         // Nueva característica: Sala física
-    private String estadoActual; // Nueva característica: Estable, Crítico, etc.
+    
+    // Nombres corregidos para que coincidan con historial.jsp
+    private String salaAsignada;  
+    private String estadoClinico; 
 
     public Paciente(String nombre, String apellido, String cedula, int gravedad) {
         this.nombre = (nombre == null || nombre.trim().isEmpty()) ? "NN" : nombre;
         this.apellido = (apellido == null || apellido.trim().isEmpty()) ? "NN" : apellido;
         this.cedula = (cedula == null || cedula.trim().isEmpty()) ? "NN" : cedula;
         this.gravedad = gravedad;
-        this.estadoActual = "En Triage"; // Cuando llega, su estado por defecto es este
-        this.sala = "Sala de Espera";    // Cuando llega, su sala por defecto es esta
+        this.estadoClinico = "En Triage"; 
+        this.salaAsignada = "Sala de Espera";
     }
 
     // --- GETTERS Y SETTERS ---
@@ -34,9 +36,10 @@ public class Paciente implements Serializable {
     public int getGravedad() { return gravedad; }
     public void setGravedad(int gravedad) { this.gravedad = gravedad; }
     
-    public String getSala() { return sala; }
-    public void setSala(String sala) { this.sala = sala; }
+    // Métodos actualizados para el JSP
+    public String getSalaAsignada() { return salaAsignada; }
+    public void setSalaAsignada(String salaAsignada) { this.salaAsignada = salaAsignada; }
     
-    public String getEstadoActual() { return estadoActual; }
-    public void setEstadoActual(String estadoActual) { this.estadoActual = estadoActual; }
+    public String getEstadoClinico() { return estadoClinico; }
+    public void setEstadoClinico(String estadoClinico) { this.estadoClinico = estadoClinico; }
 }

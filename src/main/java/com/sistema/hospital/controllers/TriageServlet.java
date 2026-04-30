@@ -46,9 +46,23 @@ public class TriageServlet extends HttpServlet {
                 request.setAttribute("errorCapacidad", "ERROR: La gravedad debe ser un número del 1 al 10.");
             }
         } 
+        // --- SECCIÓN EDITADA: EDITAR NOMBRE, CÉDULA Y ESTADO ---
         else if ("editar".equals(accion)) {
-            hospital.editarPaciente(request.getParameter("cedulaOriginal"), request.getParameter("nombre"), request.getParameter("apellido"), request.getParameter("cedula"));
-            request.setAttribute("mensaje", "✅ Datos del paciente actualizados.");
+            String cedulaOriginal = request.getParameter("cedulaOriginal");
+            String nombre = request.getParameter("nombre");
+            String apellido = request.getParameter("apellido");
+            String cedulaNueva = request.getParameter("cedula");
+            String nuevoEstado = request.getParameter("estado");
+
+            // 1. Actualizamos datos básicos (Nombre y Cédula)
+            hospital.editarPaciente(cedulaOriginal, nombre, apellido, cedulaNueva);
+            
+            // 2. Si se envió un nuevo estado (desde el historial), lo actualizamos
+            if (nuevoEstado != null && !nuevoEstado.isEmpty()) {
+                hospital.actualizarEstadoPaciente(cedulaNueva, nuevoEstado);
+            }
+            
+            request.setAttribute("mensaje", "✅ Datos y estado del paciente actualizados.");
         }
         else if ("despachar".equals(accion)) {
             mensaje = hospital.despacharASala(request.getParameter("cedula"), request.getParameter("sala"), request.getParameter("estado"));
@@ -58,25 +72,27 @@ public class TriageServlet extends HttpServlet {
                 request.setAttribute("mensaje", mensaje);
             }
         }
+        // --- SECCIÓN ACTUALIZADA: REGLA DE ALTA MÉDICA ---
         else if ("alta".equals(accion)) {
             mensaje = hospital.darAltaPaciente(request.getParameter("cedula"));
-            request.setAttribute("mensaje", mensaje);
+            // Separamos si es un error (rojo) o un éxito (verde)
+            if (mensaje.startsWith("ERROR")) {
+                request.setAttribute("errorCapacidad", mensaje);
+            } else {
+                request.setAttribute("mensaje", mensaje);
+            }
         }
         else if ("actualizarEstado".equals(accion)) {
             hospital.actualizarEstadoPaciente(request.getParameter("cedula"), request.getParameter("nuevoEstado"));
             request.setAttribute("mensaje", "✅ Estado clínico actualizado correctamente.");
         }
-        // --- SECCIÓN EDITADA: CARGA MASIVA ---
         else if ("cargarTXT".equals(accion)) {
             System.out.println("DEBUG: Iniciando carga masiva...");
-            
-            // Usamos doble barra invertida para asegurar que Windows la entienda bien
             String ruta = "C:\\hospital\\pacientes.txt"; 
             List<Paciente> importados = ArchivoUtil.importarDesdeTXT(ruta);
             
             if (importados.isEmpty()) {
                 request.setAttribute("errorCapacidad", "ERROR: El archivo está vacío o no se encontró en C:\\hospital\\pacientes.txt");
-                System.out.println("DEBUG: No se cargó nada desde el archivo.");
             } else {
                 int contador = 0;
                 boolean hayCritico = false;
@@ -85,7 +101,6 @@ public class TriageServlet extends HttpServlet {
                     String res = hospital.insertarPaciente(p);
                     if (!res.startsWith("ERROR")) {
                         contador++;
-                        // Si alguno de los importados es crítico, activamos la alerta
                         if (p.getGravedad() >= 9) hayCritico = true;
                     }
                 }
@@ -93,9 +108,7 @@ public class TriageServlet extends HttpServlet {
                 if (hayCritico) {
                     request.setAttribute("alertaCritica", "⚠️ EMERGENCIA: SE DETECTARON PACIENTES CRÍTICOS EN LA CARGA MASIVA");
                 }
-                
                 request.setAttribute("mensaje", "✅ Carga finalizada: " + contador + " pacientes nuevos agregados.");
-                System.out.println("DEBUG: Se importaron con éxito " + contador + " pacientes.");
             }
         }
 
