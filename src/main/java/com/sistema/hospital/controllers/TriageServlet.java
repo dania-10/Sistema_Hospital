@@ -32,21 +32,25 @@ public class TriageServlet extends HttpServlet {
         if ("registrar".equals(accion)) {
             try {
                 int gravedad = Integer.parseInt(request.getParameter("gravedad"));
-                mensaje = hospital.insertarPaciente(new Paciente(request.getParameter("nombre"), request.getParameter("apellido"), request.getParameter("cedula"), gravedad));
                 
-                if(mensaje.startsWith("ERROR")) {
-                    request.setAttribute("errorCapacidad", mensaje);
+                if (gravedad < 1 || gravedad > 10) {
+                    request.setAttribute("errorCapacidad", "error: el nivel de gravedad debe ser un numero entre 1 y 10");
                 } else {
-                    request.setAttribute("mensaje", mensaje);
-                    if (gravedad >= 9) {
-                        request.setAttribute("alertaCritica", "⚠️ PACIENTE EN ESTADO CRÍTICO EN LISTA DE ESPERA");
+                    mensaje = hospital.insertarPaciente(new Paciente(request.getParameter("nombre"), request.getParameter("apellido"), request.getParameter("cedula"), gravedad));
+                    
+                    if(mensaje.startsWith("error")) {
+                        request.setAttribute("errorCapacidad", mensaje);
+                    } else {
+                        request.setAttribute("mensaje", mensaje);
+                        if (gravedad >= 9) {
+                            request.setAttribute("alertaCritica", "alerta: paciente en estado critico en lista de espera");
+                        }
                     }
                 }
             } catch (NumberFormatException e) {
-                request.setAttribute("errorCapacidad", "ERROR: La gravedad debe ser un número del 1 al 10.");
+                request.setAttribute("errorCapacidad", "error: la gravedad debe ser un numero valido del 1 al 10");
             }
         } 
-        // --- SECCIÓN EDITADA: EDITAR NOMBRE, CÉDULA Y ESTADO ---
         else if ("editar".equals(accion)) {
             String cedulaOriginal = request.getParameter("cedulaOriginal");
             String nombre = request.getParameter("nombre");
@@ -54,29 +58,25 @@ public class TriageServlet extends HttpServlet {
             String cedulaNueva = request.getParameter("cedula");
             String nuevoEstado = request.getParameter("estado");
 
-            // 1. Actualizamos datos básicos (Nombre y Cédula)
             hospital.editarPaciente(cedulaOriginal, nombre, apellido, cedulaNueva);
             
-            // 2. Si se envió un nuevo estado (desde el historial), lo actualizamos
             if (nuevoEstado != null && !nuevoEstado.isEmpty()) {
                 hospital.actualizarEstadoPaciente(cedulaNueva, nuevoEstado);
             }
             
-            request.setAttribute("mensaje", "✅ Datos y estado del paciente actualizados.");
+            request.setAttribute("mensaje", "datos y estado del paciente actualizados");
         }
         else if ("despachar".equals(accion)) {
             mensaje = hospital.despacharASala(request.getParameter("cedula"), request.getParameter("sala"), request.getParameter("estado"));
-            if(mensaje.startsWith("ERROR")) {
+            if(mensaje.startsWith("error")) {
                 request.setAttribute("errorCapacidad", mensaje);
             } else {
                 request.setAttribute("mensaje", mensaje);
             }
         }
-        // --- SECCIÓN ACTUALIZADA: REGLA DE ALTA MÉDICA ---
         else if ("alta".equals(accion)) {
             mensaje = hospital.darAltaPaciente(request.getParameter("cedula"));
-            // Separamos si es un error (rojo) o un éxito (verde)
-            if (mensaje.startsWith("ERROR")) {
+            if (mensaje.startsWith("error")) {
                 request.setAttribute("errorCapacidad", mensaje);
             } else {
                 request.setAttribute("mensaje", mensaje);
@@ -84,35 +84,66 @@ public class TriageServlet extends HttpServlet {
         }
         else if ("actualizarEstado".equals(accion)) {
             hospital.actualizarEstadoPaciente(request.getParameter("cedula"), request.getParameter("nuevoEstado"));
-            request.setAttribute("mensaje", "✅ Estado clínico actualizado correctamente.");
+            request.setAttribute("mensaje", "estado clinico actualizado correctamente");
+        }
+        else if ("eliminar".equals(accion)) {
+            String cedula = request.getParameter("cedula");
+            mensaje = hospital.eliminarPaciente(cedula);
+            if (mensaje.startsWith("error")) {
+                request.setAttribute("errorCapacidad", mensaje);
+            } else {
+                request.setAttribute("mensaje", mensaje);
+            }
         }
         else if ("cargarTXT".equals(accion)) {
-            System.out.println("DEBUG: Iniciando carga masiva...");
             String ruta = "C:\\hospital\\pacientes.txt"; 
             List<Paciente> importados = ArchivoUtil.importarDesdeTXT(ruta);
             
             if (importados.isEmpty()) {
-                request.setAttribute("errorCapacidad", "ERROR: El archivo está vacío o no se encontró en C:\\hospital\\pacientes.txt");
+                hospital = new ListaTriage();
+                request.setAttribute("mensaje", "el archivo txt esta vacio. todos los pacientes fueron eliminados del sistema.");
             } else {
-                int contador = 0;
+                // 1. sincronizacion inteligente: elimina de la pagina a los que borraste del txt
+                List<Paciente> actuales = hospital.obtenerTodosLosPacientes();
+                for (Paciente pActual : actuales) {
+                    boolean existeEnTxt = false;
+                    for (Paciente pTxt : importados) {
+                        if (pActual.getCedula().equals(pTxt.getCedula())) {
+                            existeEnTxt = true;
+                            break;
+                        }
+                    }
+                    if (!existeEnTxt) {
+                        hospital.eliminarPaciente(pActual.getCedula());
+                    }
+                }
+
+                // 2. agrega a los nuevos que hayas escrito sin afectar a los que ya tienen cama
+                int pacientesNuevos = 0;
                 boolean hayCritico = false;
                 
                 for (Paciente p : importados) {
                     String res = hospital.insertarPaciente(p);
-                    if (!res.startsWith("ERROR")) {
-                        contador++;
+                    if (!res.startsWith("error")) { 
+                        pacientesNuevos++;
                         if (p.getGravedad() >= 9) hayCritico = true;
                     }
                 }
                 
-                if (hayCritico) {
-                    request.setAttribute("alertaCritica", "⚠️ EMERGENCIA: SE DETECTARON PACIENTES CRÍTICOS EN LA CARGA MASIVA");
+                if (pacientesNuevos == 0) {
+                    request.setAttribute("mensaje", "sincronizacion completada: se eliminaron los borrados del txt. no hay nuevos.");
+                } else {
+                    if (hayCritico) {
+                        request.setAttribute("alertaCritica", "alerta: se detectaron pacientes criticos en la carga masiva");
+                    }
+                    request.setAttribute("mensaje", "sincronizacion completada: actualizados correctamente y " + pacientesNuevos + " nuevos");
                 }
-                request.setAttribute("mensaje", "✅ Carga finalizada: " + contador + " pacientes nuevos agregados.");
             }
         }
 
+        ArchivoUtil.exportarATXT(hospital, "C:\\hospital\\pacientes.txt");
         ArchivoUtil.guardar(hospital);
+        
         cargarDatosYResponder(request, response);
     }
 

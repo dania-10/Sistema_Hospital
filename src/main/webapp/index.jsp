@@ -70,7 +70,7 @@
 <body>
 
     <% if (request.getAttribute("alertaCritica") != null) { %>
-        <div class="popup-critico">🚨 <%= request.getAttribute("alertaCritica") %> 🚨</div>
+        <div class="popup-critico"> <%= request.getAttribute("alertaCritica") %> </div>
         <audio autoplay><source src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" type="audio/mpeg"></audio>
     <% } %>
 
@@ -84,7 +84,7 @@
 
     <div class="card">
         <% if (request.getAttribute("errorCapacidad") != null) { %>
-            <div class="alert alert-error">❌ <%= request.getAttribute("errorCapacidad") %></div>
+            <div class="alert alert-error"> <%= request.getAttribute("errorCapacidad") %></div>
         <% } else if (request.getAttribute("mensaje") != null) { %>
             <div class="alert alert-success">✅ <%= request.getAttribute("mensaje") %></div>
         <% } %>
@@ -95,7 +95,7 @@
             <div class="stat-box" style="background: var(--morado-profundo);">OBSERVACIÓN<br><span style="font-size: 20px;"><%= hosp != null ? hosp.getObservacionDisp() : 10 %> Libres</span></div>
         </div>
 
-        <h2 style="text-align: center;">🏥 Registro Manual</h2>
+        <h2 style="text-align: center;"> Registro Manual</h2>
         <form action="TriageServlet" method="POST" class="grid-form">
             <input type="hidden" name="accion" value="registrar">
             <input type="text" name="nombre" placeholder="Nombre">
@@ -111,14 +111,14 @@
         <form action="TriageServlet" method="POST">
             <input type="hidden" name="accion" value="cargarTXT">
             <p style="text-align: center; font-size: 14px; color: #64748b; font-weight: 600;">Ruta de lectura: <i>C:/hospital/pacientes.txt</i></p>
-            <button type="submit" class="btn" style="background: var(--azul-oscuro);">📥 Cargar Pacientes desde TXT</button>
+            <button type="submit" class="btn" style="background: var(--azul-oscuro);"> Cargar Pacientes desde TXT</button>
         </form>
     </div>
 
     <div class="nav-grid">
         <!-- Actualizados para forzar la lectura del Servlet -->
-        <button onclick="irAServlet('espera')" class="btn-nav" style="background: var(--azul-medio);">📋 Sala de Espera</button>
-        <button onclick="irAServlet('historial')" class="btn-nav" style="background: var(--morado-profundo);">🏢 Gestión de Salas</button>
+        <button onclick="irAServlet('espera')" class="btn-nav" style="background: var(--azul-medio);"> Sala de Espera</button>
+        <button onclick="irAServlet('historial')" class="btn-nav" style="background: var(--morado-profundo);"> Gestión de Salas</button>
     </div>
 
 </body>

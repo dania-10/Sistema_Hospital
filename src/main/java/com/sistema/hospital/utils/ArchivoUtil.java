@@ -27,18 +27,16 @@ public class ArchivoUtil {
         List<Paciente> lista = new ArrayList<>();
         File archivo = new File(ruta);
         
-        // RASTREO 1: ¿Existe el archivo?
         if (!archivo.exists()) {
-            System.out.println("❌ ERROR: No existe el archivo en la ruta: " + ruta);
+            System.out.println("error: no existe el archivo en la ruta: " + ruta);
             return lista;
         }
-        System.out.println("✅ ARCHIVO ENCONTRADO. Iniciando lectura...");
 
         try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(archivo), "UTF-8"))) {
             String linea;
-            int contadorLíneas = 0;
+            int contadorLineas = 0;
             while ((linea = br.readLine()) != null) {
-                contadorLíneas++;
+                contadorLineas++;
                 linea = linea.trim();
                 if (linea.isEmpty()) continue;
 
@@ -47,18 +45,29 @@ public class ArchivoUtil {
                     try {
                         Paciente p = new Paciente(d[0].trim(), d[1].trim(), d[2].trim(), Integer.parseInt(d[3].trim()));
                         lista.add(p);
-                        System.out.println("👉 Paciente leído: " + d[0]);
                     } catch (Exception e) {
-                        System.out.println("❌ Error en línea " + contadorLíneas + ": " + linea);
+                        System.out.println("error en linea " + contadorLineas + ": " + linea);
                     }
-                } else {
-                    System.out.println("⚠️ Línea " + contadorLíneas + " ignorada (no tiene 4 datos)");
                 }
             }
-            System.out.println("🏁 FIN: Se cargaron " + lista.size() + " pacientes de la lista.");
         } catch (Exception e) {
-            System.out.println("❌ Fallo crítico de lectura: " + e.getMessage());
+            System.out.println("fallo critico de lectura: " + e.getMessage());
         }
         return lista;
+    }
+
+    public static void exportarATXT(ListaTriage hospital, String ruta) {
+        try {
+            PrintWriter writer = new PrintWriter(new FileWriter(ruta));
+            // este es el cambio vital: jala los pacientes de ambas listas dobles (espera y salas)
+            List<Paciente> todosLosPacientes = hospital.obtenerTodosLosPacientes();
+            
+            for (Paciente p : todosLosPacientes) {
+                writer.println(p.getNombre() + "," + p.getApellido() + "," + p.getCedula() + "," + p.getGravedad());
+            }
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("error al exportar txt: " + e.getMessage());
+        }
     }
 }
